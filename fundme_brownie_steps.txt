@@ -1,0 +1,157 @@
+Brownie Fund Me Steps Project
+
+mkdir
+
+code .
+
+#Initialization
+brownie init
+
+create the fundme.sol file under contract folder
+
+#Compiling
+brownie compile
+it will show an error because brownie does not know what is @chainlink since
+it is imported using the npm package, and REMIX knows that, but Brownie
+does not know how to use that.
+
+Solution:
+create the brownie-config.yaml file
+append the repo from github: https://github.com/smartcontractkit/chainlink-brownie-contracts
+state thar @chainlink is actually now from this git repo
+He also changed the version of pragma to 0.6.6
+
+The compilation will create the dependencies files.
+
+#Deploying
+create deploy.py
+
+create functions
+
+create file helpful_scripts.py to put functions we'll often use:
+for example: getaccount()
+
+create .env file to put our private key and infura_project_id
+
+add the wallets to the brownie_confi.yaml file 
+
+?Which private_key should it be?From my own wallet on MetaMask?
+
+How to import the getaccount() function from the helpful_scripts.py file?
+I may need to create the __init__.py 
+
+Create the deploy fund me function and deploy the contract using:
+brownie run scripts/deploy.py --network rinkeby 
+
+Now, we can add on the deploy function the publish_source=True and also
+in our .env a API key to make an API call to the ETH Rinkeby Blockchain
+so that our smart contract can be verified (Idk what is means, but it looks
+like it will be avialable for everyone to see it)
+
+By using this API, we can go to the address of the contract and the well
+be ble to interact with it there and also well be able to see the code in
+the contract. The API uses flattening, i.e., it gets the code needed 
+to import @chainlink safemath... because it does not understand @chainlink
+... This is something wed need to do for every chainlink code we need
+to integrate and that could be a burn. API does that automatically.
+
+#Deploying in our local machine
+The thing is that the ganache does not understand @chainlink functions - 
+for example, to get the price of ETH in dollars.
+So, what we're gonna do is to to either fork or mock.
+
+Mocks:
+Use a fake price feed made by us.
+
+So, we start by going into the deploy.py and creating a conditional statement:
+if the active network is not in the development category (which means the networks
+that are in the local machine, like ganache), we'll then use the price feed of the
+network associated (Kovan, Rinkeby, etc) to deploy it there.
+Now, if it is in the development, we'll grab the code from the test/mockv3
+that will have a coded simulation of a price feed. The teacher has created one
+for the community and it can be found in: https://github.com/smartcontractkit/chainlink-mix/blob/master/contracts/test/MockV3Aggregator.sol
+
+I also need to edit the code in the fund.me, so that the constructor will receive
+a price_feed_address when the deployment of the fundme contract starts.
+This price feed address will be gotten from a list of the address of each network
+not in the development found in the yaml file, or it will be gotten fom the 
+mock in case were doing it in our development mode - local.
+
+The process involves creating variables and there to make the necessary changes
+as I said. We also saved the mocking funtion in the helpful.scripts file.
+This can be seen in the 5:30:30 timeline.
+
+#Making our local network to be persistent in order to deploy on it.
+Now, we will work with our local blockchain on Ganache. The thing is that 
+ganache always forgets ur stuff after wee close it, so we need to make it
+not a development network only, but also a ethereuam network = persistent
+netowork. It is the same process to add any other network like AVAL and all
+of that:
+
+brownie networks add Ethereum* name host*=(host) chainid*=
+
+Where we see the *, it is because it changes according to what I want to do.
+
+In our cause:
+rownie networks add Ethereum ganache-local host=http://127.0.0.1:8545 chainid=1337
+
+We needed to extend the meaning of development, because our new local network
+is not in the development, but it also does not have an  "eth_usd_price_feed"
+So: LOCAL_BLOCKCHAIN_ENVIRONMENTS = ["development", "ganache-local"]
+We also need to ass ganache-local to the config file, and set its verify to False.
+(Idk much about why this last step)
+
+#Deploying locally
+brownie run scripts/deploy.py --network ganache-local 
+
+We needed also to make a quick change in the deploy.py
+  publish_source=config["networks"][network.show_active()].get("verify")
+because each network will have its attribute stored in the 
+config file
+
+#Resetting a network build:
+didnt get this well, but its a counsel in 5:42:10
+
+#After deploying, let us interact!
+
+#Funding and Withdrawing
+
+add getentrancefee() function to the fundme.sol file
+
+creatin a file to run the interaction
+
+#Writing tests without UI
+
+#Run test on just local machine so that I can be quicker
+#using pytest
+
+
+
+#I can set the default network so that I wont be typing --network networks
+name all the time
+
+
+#Mainnet forking 5:50:00
+What's going on here: 
+Forking is basically getting the actual mainnet into our local machine
+so that we cna interact with it and obviously, this wont change the
+the actual blockchain, since were doing it locally.
+
+Add the mainnet-fork into the networks without verification.
+
+Run adding mainnet fork using alchemy app.
+brownie netowrks add development mainnet-fork-dev cmd=ganache-cli host=http://127.0.0.1 fork=https://eth-mainnet.alchemyapi.io/v2/T9gcvLoex0MkvOeX21uOX168pwg6_udP accounts=10 mnemonic=brownie port=8545
+
+#Push to git
+add .env to gitignore
+
+Good advice:
+Where should I run my tests?
+I should run ALWAYS on Brownie Ganache CHain with Mocks
+and
+ALWAYs on a testnet but for integration testing only
+OPTIONAL brownie mainnet fork
+OPTIONAL custom mainnet fork
+NOT NECESSARY: self/local ganahce: good for tinkering only
+
+6:10:43
